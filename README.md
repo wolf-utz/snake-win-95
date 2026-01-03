@@ -2,6 +2,8 @@
 
 A classic Snake game written in C for Windows 95 using the Win32 API. The game runs natively on Windows 95.
 
+![Snake game running on Windows 95](Screenshot.png)
+
 ## What is this
 
 This project demonstrates retro Windows 95 development. It includes:
