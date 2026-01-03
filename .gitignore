@@ -1,0 +1,7 @@
+.vscode/
+*.img
+*.iso
+*.o
+*.err
+*.exe
+*qcow2
