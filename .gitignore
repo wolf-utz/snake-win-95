@@ -5,3 +5,5 @@
 *.err
 *.exe
 *qcow2
+.DS_Store
+CLAUDE.md
