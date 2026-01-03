@@ -1,22 +1,23 @@
 #include <windows.h>
 
 #define MAX_SNAKE 64
+
 typedef struct {
     int x;
     int y;
 } Segment;
 
-/* Snake body */
+// Snake body
 Segment snake[MAX_SNAKE];
 int snakeLength = 3;
 int i;
 int timerTickTimeInMs = 400;
 
-/* Direction */
+// Direction
 int dirX = 1;
 int dirY = 0;
 
-/* Grid config */
+// Grid config
 int x;
 int y;
 int rows = 8;
@@ -26,16 +27,22 @@ int gap  = 4;
 int startX = 4;
 int startY = 4;
 
-/* Food */
+// Food
 int foodX = -1;
 int foodY = -1;
 
+// Game state
 int gameOver = 0;
 
+// Double buffering
 HDC     backDC = NULL;
 HBITMAP backBmp = NULL;
 HBITMAP oldBmp = NULL;
 HDC hdc;
+
+int IsOppositeDirection(int newX, int newY) {
+    return (newX == -dirX && newY == -dirY);
+}
 
 LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     PAINTSTRUCT ps;
@@ -52,7 +59,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
 
             ReleaseDC(hwnd, hdc);
 
-            /* Initial snake */
+            // Initial snake
             snake[0].x = 3; snake[0].y = 3;
             snake[1].x = 2; snake[1].y = 3;
             snake[2].x = 1; snake[2].y = 3;
@@ -60,24 +67,35 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             srand(GetTickCount());
             SpawnFood();
 
-            SetTimer(hwnd, 1, timerTickTimeInMs, NULL); /* 200ms tick */
+            SetTimer(hwnd, 1, timerTickTimeInMs, NULL);
             return 0;
         case WM_KEYDOWN:
             switch (wParam) {
                 case VK_UP:
-                    dirX = 0; dirY = -1;
+                    if (!IsOppositeDirection(0, -1)) {
+                        dirX = 0; dirY = -1;
+                    }
                     break;
                 case VK_DOWN:
-                    dirX = 0; dirY = 1;
+                    if (!IsOppositeDirection(0, 1)) {
+                        dirX = 0; dirY = 1;
+                    }
                     break;
+
                 case VK_LEFT:
-                    dirX = -1; dirY = 0;
+                    if (!IsOppositeDirection(-1, 0)) {
+                        dirX = -1; dirY = 0;
+                    }
                     break;
+
                 case VK_RIGHT:
-                    dirX = 1; dirY = 0;
+                    if (!IsOppositeDirection(1, 0)) {
+                        dirX = 1; dirY = 0;
+                    }
                     break;
-                case 'R':
-                    /* Reset game */
+                case 'R': 
+                    // Reset game
+
                     snakeLength = 3;
                     snake[0].x = 3; snake[0].y = 3;
                     snake[1].x = 2; snake[1].y = 3;
@@ -93,19 +111,20 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             }
             return 0;
         case WM_TIMER:
-            if (gameOver)
+            if (gameOver) {
                 return 0;
-            
-            /* Move body: tail follows head */
+            }
+
+            // Move body (tail follows head)
             for (i = snakeLength - 1; i > 0; i--) {
                 snake[i] = snake[i - 1];
             }
 
-            /* Move head */
+            // Move head
             snake[0].x += dirX;
             snake[0].y += dirY;
 
-            /* Eat food */
+            // Eat food
             if (snake[0].x == foodX && snake[0].y == foodY) {
                 if (snakeLength < MAX_SNAKE) {
                     snake[snakeLength] = snake[snakeLength - 1];
@@ -114,16 +133,26 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 SpawnFood();
             }
 
-            /* Wrap around */
-            if (snake[0].x < 0) snake[0].x = cols - 1;
-            if (snake[0].y < 0) snake[0].y = rows - 1;
-            if (snake[0].x >= cols) snake[0].x = 0;
-            if (snake[0].y >= rows) snake[0].y = 0;
+            // Wrap around
+            if (snake[0].x < 0) {
+                snake[0].x = cols - 1;
+            }
+            if (snake[0].y < 0) {
+                snake[0].y = rows - 1;
+            }
+            if (snake[0].x >= cols) {
+                snake[0].x = 0;
+            }
+            if (snake[0].y >= rows) {
+                snake[0].y = 0;
+            }
 
-            /* Self collision check */
+            // Self collision check
             for (i = 1; i < snakeLength; i++) {
-                if (snake[0].x == snake[i].x &&
-                    snake[0].y == snake[i].y) {
+                if (
+                    snake[0].x == snake[i].x &&
+                    snake[0].y == snake[i].y
+                ) {
                     gameOver = 1;
                     KillTimer(hwnd, 1);
                     break;
@@ -135,7 +164,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
         case WM_PAINT:
             hdc = BeginPaint(hwnd, &ps);
 
-            /* Clear back buffer */
+            // Clear back buffer
             hBrush = CreateSolidBrush(RGB(255,255,255));
             FillRect(backDC, &ps.rcPaint, hBrush);
             DeleteObject(hBrush);
@@ -153,7 +182,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 }
             }
 
-            /* Draw snake head */
+            // Draw snake head
             hBrush = CreateSolidBrush(RGB(0, 160, 0));
             r.left   = startX + snake[0].x * (cell + gap);
             r.top    = startY + snake[0].y * (cell + gap);
@@ -161,8 +190,8 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             r.bottom = r.top  + cell;
             FillRect(backDC, &r, hBrush);
 
-            /* Draw body */
-            hBrush = CreateSolidBrush(RGB(0, 100, 0)); /* darker */
+            // Draw snake body
+            hBrush = CreateSolidBrush(RGB(0, 100, 0));
             for (i = 1; i < snakeLength; i++) {
                 r.left   = startX + snake[i].x * (cell + gap);
                 r.top    = startY + snake[i].y * (cell + gap);
@@ -171,7 +200,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
                 FillRect(backDC, &r, hBrush);
             }
 
-            /* Draw food */
+            // Draw food
             hBrush = CreateSolidBrush(RGB(200, 0, 0));
             r.left   = startX + foodX * (cell + gap);
             r.top    = startY + foodY * (cell + gap);
@@ -179,15 +208,16 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             r.bottom = r.top  + cell;
             FillRect(backDC, &r, hBrush);
 
+            // Draw game over Text
             if (gameOver) {
                 SetBkMode(backDC, TRANSPARENT);
                 SetTextColor(backDC, RGB(200, 0, 0));
                 TextOut(backDC, 60, 140, "GAME OVER", 9);
                 SetTextColor(backDC, RGB(40, 20, 20));
-                TextOut(backDC, 40, 160, "Pres \"R\" to try again", 21);
+                TextOut(backDC, 40, 160, "Press \"R\" to try again", 22);
             }
 
-            /* Copy buffer to screen */
+            // Copy buffer to screen
             BitBlt(
                 hdc,
                 0, 0,
@@ -202,6 +232,7 @@ LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             EndPaint(hwnd, &ps);
             return 0;
         case WM_ERASEBKGND:
+            // This will help to reduce the flickering. 
             return 1;
         case WM_DESTROY:
             KillTimer(hwnd, 1);
@@ -261,7 +292,7 @@ void SpawnFood(void) {
         foodX = rand() % cols;
         foodY = rand() % rows;
 
-        /* Make sure food is not on snake */
+        // Make sure food does not spawn in the snake.
         for (i = 0; i < snakeLength; i++) {
             if (snake[i].x == foodX && snake[i].y == foodY) {
                 ok = 0;
